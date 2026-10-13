@@ -1,0 +1,17 @@
+# RecompModTool manifest. Rename the mod by changing id, display_name and mod_filename together (id must be a C identifier).
+[manifest]
+id = "my_mod"
+version = "1.0.0"
+display_name = "My Mod"
+description = "An example Rogue Squadron 64 Recompiled code mod."
+short_description = "An example code mod."
+authors = ["you"]
+game_id = "rs64"
+minimum_recomp_version = "0.0.0"
+enabled_by_default = true
+
+[inputs]
+elf_path = "build/mod.elf"
+mod_filename = "my_mod"
+func_reference_syms_file = "syms/rogue_squadron.syms.toml"
+data_reference_syms_files = [ "syms/rogue_squadron.datasyms.mods.toml" ]

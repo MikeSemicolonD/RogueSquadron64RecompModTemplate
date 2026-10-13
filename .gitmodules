@@ -1,0 +1,3 @@
+[submodule "syms"]
+	path = syms
+	url = https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms.git
