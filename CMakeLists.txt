@@ -1,6 +1,6 @@
 # Builds the mod in src/ into build/<mod_filename>.nrm:
 #
-#   cmake -S . -B build -DMIPS_TOOLCHAIN_DIR=<mips64-elf toolchain root> -DRECOMP_MOD_TOOL=<path to RecompModTool>
+#   cmake -S . -B build -DMIPS_TOOLCHAIN_DIR=<mips64-elf toolchain root> -DRECOMP_MOD_TOOL=<path to RecompModTool> [-DGAME_ROM=<rom.z64>]
 #   cmake --build build
 #
 # Both tools are also found on PATH. The .nrm name comes from mod_filename in mod.toml.
@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.20)
 project(rs64_mod NONE)
 
 set(MIPS_TOOLCHAIN_DIR "" CACHE PATH "MIPS GCC toolchain root (holds bin/mips64-elf-gcc)")
+set(GAME_ROM "" CACHE FILEPATH "Optional: the game ROM (big-endian .z64), to check [[patches.instruction]] entries against it at build time")
 find_program(MIPS_GCC NAMES mips64-elf-gcc HINTS "${MIPS_TOOLCHAIN_DIR}/bin")
 find_program(MIPS_LD NAMES mips64-elf-ld HINTS "${MIPS_TOOLCHAIN_DIR}/bin")
 find_program(RECOMP_MOD_TOOL NAMES RecompModTool)
@@ -30,8 +31,8 @@ set(MOD_OUT "${CMAKE_SOURCE_DIR}/build")
 file(GLOB_RECURSE MOD_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.c")
 file(GLOB_RECURSE MOD_HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.h" "${CMAKE_SOURCE_DIR}/syms/include/*.h")
 
-# The game's code-mod flags. -fno-optimize-sibling-calls keeps calls as jal: a tail jump into a game function or import fails LiveRecomp.
-set(MOD_CFLAGS -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls
+# The game's code-mod flags. -fno-optimize-sibling-calls keeps calls as jal: a tail jump into a game function or import fails LiveRecomp; -fno-stack-protector because distro MIPS GCCs enable it and the game has no guard symbol.
+set(MOD_CFLAGS -mips2 -mabi=32 -O2 -G0 -mno-abicalls -fomit-frame-pointer -fno-builtin -fno-optimize-sibling-calls -fno-stack-protector
     -nostdinc -I "${CMAKE_SOURCE_DIR}/syms/include" -I "${CMAKE_SOURCE_DIR}/src" -Wall -Wextra -Wno-unused-parameter)
 
 set(objs "")
@@ -55,17 +56,29 @@ else()
 endif()
 
 # Game functions stay undefined so RecompModTool resolves them by name; ld flags each call into the game as out of range, which --noinhibit-exec lets through.
-add_custom_command(OUTPUT "${MOD_OUT}/mod.elf"
-    COMMAND "${MIPS_LD}" -nostdlib -T "${MOD_LD}" -Map "${MOD_OUT}/mod.map"
-        --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 ${objs} -o "${MOD_OUT}/mod.elf"
-    DEPENDS ${objs} "${MOD_LD}"
-    VERBATIM)
+# No sources: a mod of only [[patches.instruction]] entries (mod.toml has no elf_path).
+set(MOD_ELF_DEP "")
+if (objs)
+    add_custom_command(OUTPUT "${MOD_OUT}/mod.elf"
+        COMMAND "${MIPS_LD}" -nostdlib -T "${MOD_LD}" -Map "${MOD_OUT}/mod.map"
+            --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 ${objs} -o "${MOD_OUT}/mod.elf"
+        DEPENDS ${objs} "${MOD_LD}"
+        VERBATIM)
+    set(MOD_ELF_DEP "${MOD_OUT}/mod.elf")
+endif()
+
+# --as assembles mod.toml's [[patches.instruction]] entries; --rom checks them against the game.
+set(MOD_TOOL_ARGS --as "${MIPS_GCC}")
+if (GAME_ROM)
+    list(APPEND MOD_TOOL_ARGS --rom "${GAME_ROM}")
+endif()
 
 # Files mod.toml packs with additional_files repack the .nrm when they change.
-file(GLOB MOD_EXTRA_FILES "${CMAKE_SOURCE_DIR}/roguesq_menu.json" "${CMAKE_SOURCE_DIR}/instruction_patches.json")
+file(GLOB MOD_EXTRA_FILES "${CMAKE_SOURCE_DIR}/roguesq_menu.json")
 add_custom_command(OUTPUT "${MOD_OUT}/${MOD_FILENAME}.nrm"
-    COMMAND "${RECOMP_MOD_TOOL}" "${CMAKE_SOURCE_DIR}/mod.toml" "${MOD_OUT}"
-    DEPENDS "${MOD_OUT}/mod.elf" "${CMAKE_SOURCE_DIR}/mod.toml" ${MOD_EXTRA_FILES}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${MOD_OUT}"
+    COMMAND "${RECOMP_MOD_TOOL}" "${CMAKE_SOURCE_DIR}/mod.toml" "${MOD_OUT}" ${MOD_TOOL_ARGS}
+    DEPENDS ${MOD_ELF_DEP} "${CMAKE_SOURCE_DIR}/mod.toml" ${MOD_EXTRA_FILES}
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Packing ${MOD_FILENAME}.nrm"
     VERBATIM)
