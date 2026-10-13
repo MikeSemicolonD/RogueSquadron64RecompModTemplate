@@ -1,4 +1,4 @@
-// Example mod: counts mission frames and, while its "announce" option (mod.toml) is On, prints when a mission starts and ends. Replace it with your own code.
+// Example mod: counts mission frames and, while its "announce" option (mod.toml) is On, prints when a mission starts and ends; its menu page (roguesq_menu.json) toggles the option and runs my_mod_report. Replace it with your own code.
 #include "rs64_api.h"
 #include "recompconfig.h"
 #include "recomputils.h"
@@ -23,6 +23,11 @@ RECOMP_CALLBACK("*", rs64_on_mission_end) void my_mod_on_mission_end(void) {
         recomp_printf("[my_mod] mission ended after %u frames\n", mission_frames);
     }
     mission_frames = 0;
+}
+
+// The REPORT entry on the mod's menu page (roguesq_menu.json, "@my_mod_report") calls this export.
+RECOMP_EXPORT void my_mod_report(void) {
+    recomp_printf("[my_mod] announce is %s, %u frames into the current mission\n", announce() ? "on" : "off", mission_frames);
 }
 
 // More ways in, by game function name from syms/rogue_squadron.syms.toml:

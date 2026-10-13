@@ -24,4 +24,6 @@ default = "On"
 elf_path = "build/mod.elf"
 mod_filename = "my_mod"
 func_reference_syms_file = "syms/rogue_squadron.syms.toml"
-data_reference_syms_files = [ "syms/rogue_squadron.datasyms.mods.toml" ]
+data_reference_syms_files = [ "syms/rogue_squadron.datasyms.toml" ]
+# Packed into the .nrm next to the code: the menu page (roguesq_menu.json). Add "instruction_patches.json" here to ship instruction patches.
+additional_files = [ "roguesq_menu.json" ]

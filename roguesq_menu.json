@@ -1,0 +1,7 @@
+{
+  "buttons": [
+    { "id": "my_mod_open", "menu": "main_menu", "type": "submenu", "page": "my_mod", "label": "MY MOD", "title": "MY MOD" },
+    { "menu": "my_mod", "type": "toggle", "toggle": "config:announce", "label_on": "ANNOUNCE: ON", "label_off": "ANNOUNCE: OFF" },
+    { "menu": "my_mod", "type": "action", "action": "@my_mod_report", "label": "REPORT" }
+  ]
+}

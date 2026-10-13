@@ -19,6 +19,9 @@ endforeach()
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/syms/include/rs64_api.h")
     message(FATAL_ERROR "syms/ is empty: run git submodule update --init")
 endif()
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/mod.ld" AND NOT EXISTS "${CMAKE_SOURCE_DIR}/syms/include/mod.ld")
+    message(FATAL_ERROR "syms/ predates the shared linker script: run git submodule update --remote syms")
+endif()
 
 file(STRINGS "${CMAKE_SOURCE_DIR}/mod.toml" mod_filename_line REGEX "^mod_filename *=")
 string(REGEX REPLACE "^mod_filename *= *\"([^\"]+)\".*" "\\1" MOD_FILENAME "${mod_filename_line}")
@@ -44,16 +47,25 @@ foreach(src ${MOD_SOURCES})
     list(APPEND objs "${obj}")
 endforeach()
 
+# The SDK's linker script, unless the mod brings its own mod.ld.
+if (EXISTS "${CMAKE_SOURCE_DIR}/mod.ld")
+    set(MOD_LD "${CMAKE_SOURCE_DIR}/mod.ld")
+else()
+    set(MOD_LD "${CMAKE_SOURCE_DIR}/syms/include/mod.ld")
+endif()
+
 # Game functions stay undefined so RecompModTool resolves them by name; ld flags each call into the game as out of range, which --noinhibit-exec lets through.
 add_custom_command(OUTPUT "${MOD_OUT}/mod.elf"
-    COMMAND "${MIPS_LD}" -nostdlib -T "${CMAKE_SOURCE_DIR}/mod.ld" -Map "${MOD_OUT}/mod.map"
+    COMMAND "${MIPS_LD}" -nostdlib -T "${MOD_LD}" -Map "${MOD_OUT}/mod.map"
         --unresolved-symbols=ignore-all --emit-relocs --noinhibit-exec -e 0 ${objs} -o "${MOD_OUT}/mod.elf"
-    DEPENDS ${objs} "${CMAKE_SOURCE_DIR}/mod.ld"
+    DEPENDS ${objs} "${MOD_LD}"
     VERBATIM)
 
+# Files mod.toml packs with additional_files repack the .nrm when they change.
+file(GLOB MOD_EXTRA_FILES "${CMAKE_SOURCE_DIR}/roguesq_menu.json" "${CMAKE_SOURCE_DIR}/instruction_patches.json")
 add_custom_command(OUTPUT "${MOD_OUT}/${MOD_FILENAME}.nrm"
     COMMAND "${RECOMP_MOD_TOOL}" "${CMAKE_SOURCE_DIR}/mod.toml" "${MOD_OUT}"
-    DEPENDS "${MOD_OUT}/mod.elf" "${CMAKE_SOURCE_DIR}/mod.toml"
+    DEPENDS "${MOD_OUT}/mod.elf" "${CMAKE_SOURCE_DIR}/mod.toml" ${MOD_EXTRA_FILES}
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Packing ${MOD_FILENAME}.nrm"
     VERBATIM)
