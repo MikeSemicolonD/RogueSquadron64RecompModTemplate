@@ -31,10 +31,11 @@ A starting point for code mods (`.nrm`) for [Rogue Squadron 64 Recompiled](https
 ## Making it yours
 
 - **Name:** change `id`, `display_name` and `mod_filename` in `mod.toml`. `id` must be a C identifier.
-- **Code:** goes in `src/` (every `.c` file there is built). `src/mod_main.c` shows an event callback; its closing comment shows hooks and patches.
+- **Code:** goes in `src/` (every `.c` file there is built). `src/mod_main.c` shows event callbacks and reading an option; its closing comment shows hooks and patches.
+- **Options:** declare them in `mod.toml` (`[[manifest.config_options]]`; the example has an On/Off "Announce missions"). They appear under the mod in the Mods panel (F1), and the code reads them with `recomp_get_config_u32` / `_double` / `_string`.
 - **Headers:** `rs64_api.h` (mod macros and the game's exports), `recomputils.h` (`recomp_alloc`, `recomp_free`, `recomp_printf`), `recompconfig.h` (config options) and `recompdata.h` (hashmaps, hashsets, slotmaps), all in `syms/include/`.
 
-The [syms README](https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms#readme) covers what mods can call and hook, including the game functions the base recomp patches. The game's `docs/modding-host-api.md` lists every `rs64_on_*` event.
+The [syms README](https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms#readme) covers what mods can call and hook, including the game functions the base recomp patches. [syms/EVENTS.md](https://github.com/MikeSemicolonD/RogueSquadron64RecompSyms/blob/main/EVENTS.md) lists every `rs64_on_*` event and what a callback can read, change or return there.
 
 ## Updating
 

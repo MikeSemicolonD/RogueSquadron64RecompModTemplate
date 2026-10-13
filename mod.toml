@@ -10,6 +10,16 @@ game_id = "rs64"
 minimum_recomp_version = "0.0.0"
 enabled_by_default = true
 
+# Options appear under the mod in the game's Mods panel (F1); read them with recomp_get_config_u32 / _double / _string (recompconfig.h).
+# type is "Enum" (options, default; the value read is the option's index), "Number" (min, max, step, precision, percent, default) or "String" (default).
+[[manifest.config_options]]
+id = "announce"
+name = "Announce missions"
+description = "Print a line to the game's console when a mission starts and ends."
+type = "Enum"
+options = [ "Off", "On" ]
+default = "On"
+
 [inputs]
 elf_path = "build/mod.elf"
 mod_filename = "my_mod"
