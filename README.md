@@ -14,7 +14,7 @@ A starting point for code mods (`.nrm`) for [Rogue Squadron 64 Recompiled](https
 
 2. Install the tools:
    - **MIPS GCC** (`mips64-elf-gcc` and `mips64-elf-ld`). Windows builds are at [n64-tools/gcc-toolchain-mips64](https://github.com/n64-tools/gcc-toolchain-mips64/releases).
-   - **RecompModTool**, built from [N64ModernRuntime](https://github.com/MikeSemicolonD/N64ModernRuntime) (`N64Recomp/`, target `RecompModTool`).
+   - **RecompModTool**, downloaded from a `modtool-v*` [release](https://github.com/MikeSemicolonD/RogueSquadron64Recomp/releases) or built from [N64ModernRuntime](https://github.com/MikeSemicolonD/N64ModernRuntime) (`N64Recomp/`, target `RecompModTool`). The upstream N64Recomp build won't work: it can't write the instruction patches.
    - **CMake** 3.20 or later.
 
 3. Build:
